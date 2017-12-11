@@ -61,13 +61,16 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         gTimersListSize = 1;
 
         /* start low level timer */
-        HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
+       /* HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
                                 gTimersList[0].expiredTimeEvent,
-                                (HTAL_tenuTimerMode)gTimersList[0].timerMode,
-                                updateTimersList);
+                                (HTAL_tenuTimerMode)gTimersList[0].timerMode);*/
     }
     else
     {
+        VTAL_tTimeMilliSec newTimerRelativeTimeout;
+        unsigned long Idx;
+        VTAL_tTimeMilliSec accumlatedRelativeTimes;
+
         VTAL_tTimeMilliSec newTimerAbsTimeout =
             VTAL_tpstrConfig->expiredTime.milliseconds +
             (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
@@ -83,7 +86,6 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
          * in a relative time for this timer to be zero. which will be fired
          * automatically after the previous timer.
          *  */
-        VTAL_tTimeMilliSec newTimerRelativeTimeout;
         newTimerRelativeTimeout = newTimerAbsTimeout - gAbsoulateTimeoutmSec;
 
         if (newTimerRelativeTimeout >= 0)
@@ -116,8 +118,7 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
          * fire its callback immediately if available after the previous time 
          * finishes.
          *  */
-        unsigned long Idx = 0;
-        VTAL_tTimeMilliSec accumlatedRelativeTimes = 0;
+        accumlatedRelativeTimes = 0;
         for (Idx = 0; Idx < gTimersListSize; ++Idx)
         {
             if ((newTimerAbsTimeout - accumlatedRelativeTimes) < gTimersList[Idx].relativeTimeoutmSec)
@@ -157,18 +158,18 @@ void updateTimersList(void)
 
 void shiftTimersListOneStepForward(int lastIdxToShift)
 {
-    if(lastIdxToShift <= 0)
-        return;
     int idx;
-    for(idx = gTimersListSize; idx >= lastIdxToShift; --idx )
-        gTimersList[idx] =  gTimersList[idx - 1]; 
+    if (lastIdxToShift <= 0)
+        return;
+    for (idx = gTimersListSize; idx >= lastIdxToShift; --idx)
+        gTimersList[idx] = gTimersList[idx - 1];
 }
 
 static int findTimer(VTAL_tTimerId timerID)
 {
+    int i = 0;
     if (gTimersListSize == EMPTY_LIST)
         return NOT_FOUND;
-    int i = 0;
     do
     {
         if (gTimersList[i].timerID == timerID)
@@ -179,7 +180,7 @@ static int findTimer(VTAL_tTimerId timerID)
     return NOT_FOUND;
 }
 
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
 #include <stdio.h>
 
 void VTAL_showTimerList()
@@ -192,10 +193,10 @@ void VTAL_showTimerList()
     }
 
     printf("-----------------\n");
-    printf("T_abs = %d\n",gAbsoulateTimeoutmSec);
+    printf("T_abs = %ld\n",gAbsoulateTimeoutmSec);
     for(i = 0; i < gTimersListSize;i++)
     {
-        printf("T_rel[%d] = %d, ( id = %d )\n",i,gTimersList[i].relativeTimeoutmSec,
+        printf("T_rel[%d] = %ld, ( id = %d )\n",i,gTimersList[i].relativeTimeoutmSec,
         gTimersList[i].timerID);
     }
 }

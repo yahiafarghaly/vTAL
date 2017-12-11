@@ -9,18 +9,18 @@
 extern "C" {
 #endif
 
-typedef enum
-{
-    HTAL_ONE_SHOT_TIMER,
-    HTAL_PERIODIC_TIMER
-}HTAL_tenuTimerMode;
 
 void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
-                             void (*userTimerCallBack)(void *),
-                             HTAL_tenuTimerMode userTimerMode,
-                             void(*VTAL_updateCallBack)(void));
+                             void (*userTimerCallBack)(void *));
 
 void HTAL_stopPhysicalTimer(void);
+
+/*!
+ * To be used when you have multiple logical timers with the same timeout.
+ * */
+void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *));
+
+void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void));
 
 
 #ifdef __cplusplus

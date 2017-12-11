@@ -35,8 +35,7 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig);
 
 void VTAL_removeTimer(VTAL_tTimerId timerID);
 
-#define __VTAL_DEBUG__
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
     void VTAL_showTimerList();
 #endif
 

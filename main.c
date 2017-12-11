@@ -2,6 +2,10 @@
 
 #include <vTAL.h>
 
+#ifdef __DEBUG__
+void test_low_level_timer();
+#endif
+
 int main()
 {
     VTAL_tstrConfig t1,t2,t3,t4,t5,t6,t7,t8,t9;
@@ -45,54 +49,80 @@ int main()
     printf("Hello vTAL\n");
 
     VTAL_addTimer(&t1);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
     VTAL_addTimer(&t2);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
     VTAL_addTimer(&t3);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
     VTAL_addTimer(&t4);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
     VTAL_addTimer(&t5);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
     VTAL_addTimer(&t6);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
     VTAL_addTimer(&t7);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
       VTAL_addTimer(&t8);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
 
       VTAL_addTimer(&t9);
-#ifdef __VTAL_DEBUG__
+#ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
 
-        /* final output:
-            T_abs = 1700
-            T_rel[0] = 100, ( id = 4 )
-            T_rel[1] = 50, ( id = 5 )
-            T_rel[2] = 150, ( id = 9 )
-            T_rel[3] = 100, ( id = 2 )
-            T_rel[4] = 0, ( id = 7 )
-            T_rel[5] = 100, ( id = 1 )
-            T_rel[6] = 500, ( id = 3 )
-            T_rel[7] = 0, ( id = 6 )
-            T_rel[8] = 700, ( id = 8 )
-        */
+    /* final correct output:
+        T_abs = 1700
+        T_rel[0] = 100, ( id = 4 )
+        T_rel[1] = 50, ( id = 5 )
+        T_rel[2] = 150, ( id = 9 )
+        T_rel[3] = 100, ( id = 2 )
+        T_rel[4] = 0, ( id = 7 )
+        T_rel[5] = 100, ( id = 1 )
+        T_rel[6] = 500, ( id = 3 )
+        T_rel[7] = 0, ( id = 6 )
+        T_rel[8] = 700, ( id = 8 )
+    */
+#ifdef __DEBUG__
+    test_low_level_timer();
+#endif
         return 0;
 }
+
+#ifdef __DEBUG__
+int locker = 0;
+void timerEvent(void *arg)
+{
+    printf("Hi\n");
+}
+void timerEvent2(void *arg)
+{
+    printf("Hi2\n");
+    locker = 1;
+}
+void test_low_level_timer()
+{
+#include "vTAL/vTAL-src/vTAL_low_level_timer_arch.h"
+    printf("Low level timer test starts\n");
+    HTAL_startPhysicalTimer(10000, timerEvent);
+    HTAL_changeUserTimerCallBack(timerEvent2);
+    while (!locker)
+        ;
+    printf("Low level timer test ends\n");
+}
+#endif
