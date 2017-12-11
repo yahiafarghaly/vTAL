@@ -68,48 +68,59 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
     }
     else
     {
-        unsigned long Idx = 0;
         VTAL_tTimeMilliSec newTimerAbsTimeout =
             VTAL_tpstrConfig->expiredTime.milliseconds +
             (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
-        VTAL_tTimeMilliSec accumlatedRelativeTimes = 0;
+        
+        /*! 
+         * When NewTimerAbsTimeout is >= gAbsoulateTimeout, 
+         * 1- We put this newTimer at the end of the list.
+         * 2- Insert the relative time w.r.t to gAbsoulateTimeout.
+         * 3- Finally, we update the gAbsoulateTimeout for the new abs timeout
+         *      referrence.
+         * 
+         * In case of equal absTimeout == newTimerAbsTimeout, this will result
+         * in a relative time for this timer to be zero. which will be fired
+         * automatically after the previous timer.
+         *  */
+        VTAL_tTimeMilliSec newTimerRelativeTimeout;
+        newTimerRelativeTimeout = newTimerAbsTimeout - gAbsoulateTimeoutmSec;
 
+        if (newTimerRelativeTimeout >= 0)
+        {
+            gTimersList[gTimersListSize].timerID = VTAL_tpstrConfig->timerID;
+            gTimersList[gTimersListSize].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
+            gTimersList[gTimersListSize].timerMode = VTAL_tpstrConfig->timerMode;
+            gTimersList[gTimersListSize].relativeTimeoutmSec = newTimerRelativeTimeout;
+            gTimersList[gTimersListSize].timerStatus = ACTIVE;
+            ++gTimersListSize;
+            gAbsoulateTimeoutmSec = newTimerAbsTimeout;
+            return;
+        }
+
+        /*! 
+         * Generalized Case when the relative time/s of timers are less than 
+         * the relative time of a timer in [Idx] Position.
+         * When finding this Idx position:
+         * 1- Firstly, we shift the whole array one step forward till position
+         *    [Idx + 1] becomes the first position in this shifted array.
+         * 2- Then, the new timer is inserted with a relative timeout equals to 
+         *    its absoulate time - sum of all previous relative times of timers.
+         * 3- Then, the timer in the next of the inserted timer (i.e, @[Idx+1]),
+         *    its relative timing is substracted a certain amount which was
+         *    given for the new inserted timer @[Idx] position.
+         * Best case: 1 iteration in the loop.
+         *  the first timer relative time is greater than the inserted.
+         * When newTimerAbsTimeout - accumlatedRelativeTimes == 0, this means
+         * that the inserted timer will have a relative timeout of 0 which will
+         * fire its callback immediately if available after the previous time 
+         * finishes.
+         *  */
+        unsigned long Idx = 0;
+        VTAL_tTimeMilliSec accumlatedRelativeTimes = 0;
         for (Idx = 0; Idx < gTimersListSize; ++Idx)
         {
-            if (newTimerAbsTimeout < gTimersList[Idx].relativeTimeoutmSec)
-            {
-                /*!
-                * O(1) case when first element is larger than new timer.
-                * 1 - Shift TimersList by 1 position.
-                * 2 - Insert newTimer at In index [0] with newTimerAbsTimeout.
-                * 3 - take some time from gTimersList[1] due to [0].
-                */
-                shiftTimersListOneStepForward(Idx + 1);
-                gTimersList[Idx].timerID = VTAL_tpstrConfig->timerID;
-                gTimersList[Idx].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
-                gTimersList[Idx].timerMode = VTAL_tpstrConfig->timerMode;
-                gTimersList[Idx].timerStatus = ACTIVE;
-
-                gTimersList[Idx].relativeTimeoutmSec = newTimerAbsTimeout;
-                gTimersList[Idx + 1].relativeTimeoutmSec =
-                    gTimersList[Idx + 1].relativeTimeoutmSec - gTimersList[Idx].relativeTimeoutmSec;
-                ++gTimersListSize;
-                return;
-            }
-            else if(accumlatedRelativeTimes == newTimerAbsTimeout)
-            {
-                shiftTimersListOneStepForward(Idx + 1);
-                gTimersList[Idx].timerID = VTAL_tpstrConfig->timerID;
-                gTimersList[Idx].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
-                gTimersList[Idx].timerMode = VTAL_tpstrConfig->timerMode;
-                gTimersList[Idx].timerStatus = ACTIVE;
-
-                gTimersList[Idx].relativeTimeoutmSec = 0;
-                ++gTimersListSize;
-                return;
-            }
-            else if ((newTimerAbsTimeout - accumlatedRelativeTimes) > 0 &&
-            ((newTimerAbsTimeout - accumlatedRelativeTimes) < gTimersList[Idx].relativeTimeoutmSec))
+            if ((newTimerAbsTimeout - accumlatedRelativeTimes) < gTimersList[Idx].relativeTimeoutmSec)
             {
                 shiftTimersListOneStepForward(Idx + 1);
                 gTimersList[Idx].timerID = VTAL_tpstrConfig->timerID;
@@ -119,29 +130,12 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
 
                 gTimersList[Idx].relativeTimeoutmSec = newTimerAbsTimeout - accumlatedRelativeTimes;
                 gTimersList[Idx + 1].relativeTimeoutmSec =
-                gTimersList[Idx + 1].relativeTimeoutmSec - gTimersList[Idx].relativeTimeoutmSec;
+                    gTimersList[Idx + 1].relativeTimeoutmSec - gTimersList[Idx].relativeTimeoutmSec;
                 ++gTimersListSize;
                 return;
             }
             accumlatedRelativeTimes += gTimersList[Idx].relativeTimeoutmSec;
         }
-        /*! 
-         * We reach this point when NewTimerAbsTimeout is >= absTimeout.
-         * So, we put this newTimer at the end,substracting absTimeout from it.
-         * 
-         * In case of equal absTimeout == newTimerAbsTimeout, this will result
-         * in a relative time for this timer to be zero. which will be fired
-         * automatically after the previous timer. */
-        VTAL_tTimeMilliSec newTimerRelativeTimeout;
-        newTimerRelativeTimeout = newTimerAbsTimeout - gAbsoulateTimeoutmSec;
-
-        gTimersList[gTimersListSize].timerID = VTAL_tpstrConfig->timerID;
-        gTimersList[gTimersListSize].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
-        gTimersList[gTimersListSize].timerMode = VTAL_tpstrConfig->timerMode;
-        gTimersList[gTimersListSize].relativeTimeoutmSec = newTimerRelativeTimeout;
-        gTimersList[gTimersListSize].timerStatus = ACTIVE;
-        ++gTimersListSize;
-        gAbsoulateTimeoutmSec = newTimerAbsTimeout;
     }
 }
 

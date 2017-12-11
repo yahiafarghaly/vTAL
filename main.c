@@ -82,27 +82,17 @@ int main()
         VTAL_showTimerList();
 #endif
 
-/* final output without t9:
-    T_abs = 1700
-    T_rel[0] = 100, ( id = 4 )
-    T_rel[1] = 150, ( id = 5 )
-    T_rel[2] = 150, ( id = 2 )
-    T_rel[3] = 0 , (id = 7)
-    T_rel[4] = 100, ( id = 1 )
-    T_rel[5] = 500, ( id = 3 )
-    T_rel[6] = 0, ( id = 6 )
-    T_rel[7] = 700, ( id = 8 )
-    ---------------------------- with t9
-    T_abs = 1700
-    T_rel[0] = 100, ( id = 4 )
-    T_rel[1] = 150, ( id = 5 )
-    T_rel[2] = 50, (id = 9)
-    T_rel[3] = 100, ( id = 2 )
-    T_rel[4] = 0 , (id = 7)
-    T_rel[5] = 100, ( id = 1 )
-    T_rel[6] = 500, ( id = 3 )
-    T_rel[7] = 0, ( id = 6 )
-    T_rel[8] = 700, ( id = 8 )
-*/
-    return 0;
+        /* final output:
+            T_abs = 1700
+            T_rel[0] = 100, ( id = 4 )
+            T_rel[1] = 50, ( id = 5 )
+            T_rel[2] = 150, ( id = 9 )
+            T_rel[3] = 100, ( id = 2 )
+            T_rel[4] = 0, ( id = 7 )
+            T_rel[5] = 100, ( id = 1 )
+            T_rel[6] = 500, ( id = 3 )
+            T_rel[7] = 0, ( id = 6 )
+            T_rel[8] = 700, ( id = 8 )
+        */
+        return 0;
 }
