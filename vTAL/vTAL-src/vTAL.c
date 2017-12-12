@@ -22,7 +22,7 @@ typedef struct
 
 static VTAL_tTimeMilliSec gAbsoulateTimeoutmSec = 0;
 static long gTimersListSize = EMPTY_LIST;
-
+static long gCurrentRunningTimerIdx = -1;
 static VTAL_tstrTimerInfo gTimersList[NUMBER_OF_TIMERS];
 
 
@@ -59,11 +59,12 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         gTimersList[0].timerStatus  = ACTIVE;
         gAbsoulateTimeoutmSec = gTimersList[0].relativeTimeoutmSec;
         gTimersListSize = 1;
-
+        gCurrentRunningTimerIdx = 0;
+        /*Assign Timerslist Update function */
+        HTAL_updateVirtualTimersList(updateTimersList);
         /* start low level timer */
-       /* HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
-                                gTimersList[0].expiredTimeEvent,
-                                (HTAL_tenuTimerMode)gTimersList[0].timerMode);*/
+        HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
+                                gTimersList[0].expiredTimeEvent);
     }
     else
     {
@@ -123,6 +124,17 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         {
             if ((newTimerAbsTimeout - accumlatedRelativeTimes) < gTimersList[Idx].relativeTimeoutmSec)
             {
+                /*If first node is being changed, Change its 
+                    user callback & timeout quickly @ lower level */
+                if(Idx == 0)
+                {
+                    HTAL_changeUserTimerCallBack(VTAL_tpstrConfig->expiredTimeEvent);
+                    /* This is not correct by any means to stop the actual timing &
+                        should be placed with the correct behaviour/Interface.*/
+                    HTAL_stopPhysicalTimer();
+                    HTAL_startPhysicalTimer(newTimerAbsTimeout,
+                                            VTAL_tpstrConfig->expiredTimeEvent);
+                }
                 shiftTimersListOneStepForward(Idx + 1);
                 gTimersList[Idx].timerID = VTAL_tpstrConfig->timerID;
                 gTimersList[Idx].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
@@ -153,7 +165,31 @@ void VTAL_removeTimer(VTAL_tTimerId timerID)
 
 void updateTimersList(void)
 {
-
+    ++gCurrentRunningTimerIdx;
+    if (gCurrentRunningTimerIdx >= gTimersListSize)
+    {
+        gCurrentRunningTimerIdx = -1;
+        gTimersListSize == EMPTY_LIST;
+    }
+    else
+    {
+        /*!
+         * When having multiple of Logical timers with the same timeout. By
+         * design the next relative timeout will be zero, So we just execute 
+         * user callback immediatly.
+        */
+        if (gTimersList[gCurrentRunningTimerIdx].relativeTimeoutmSec == 0)
+        {
+            gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent((void*)0);
+            updateTimersList();
+        }
+        else
+        {
+            HTAL_startPhysicalTimer(
+                gTimersList[gCurrentRunningTimerIdx].relativeTimeoutmSec,
+                gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent);
+        }
+    }
 }
 
 void shiftTimersListOneStepForward(int lastIdxToShift)

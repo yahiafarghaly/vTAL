@@ -8,6 +8,8 @@
 #include <signal.h>
 
 void (*gUserTimerCallBack)(void *);
+void(*gVTAL_updateCallBack)(void);
+
 struct itimerval timerVal;
 struct sigaction TimerSignalHandler, oldTimerSignalHandler;
 
@@ -55,10 +57,12 @@ void HTAL_linux_TimerHandler(int signal_num)
 {
     if(gUserTimerCallBack != NULL)
         gUserTimerCallBack(NULL);
+    gVTAL_updateCallBack();
 }
+
 void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void))
 {
-    VTAL_updateCallBack();
+    gVTAL_updateCallBack = VTAL_updateCallBack;
 }
 
 void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *))

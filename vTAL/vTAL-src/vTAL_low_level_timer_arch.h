@@ -15,9 +15,7 @@ void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
 
 void HTAL_stopPhysicalTimer(void);
 
-/*!
- * To be used when you have multiple logical timers with the same timeout.
- * */
+
 void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *));
 
 void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void));
