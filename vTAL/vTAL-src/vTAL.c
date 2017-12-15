@@ -7,6 +7,7 @@
 
 typedef enum
 {
+    /*  Not Used Yet */
     NOT_AVAILABLE = 0x0C0C,
     ACTIVE = 0x00DB,
     READY = 0x0FCF
@@ -23,7 +24,6 @@ typedef struct
 
 static VTAL_tTimeMilliSec gAbsoulateTimeoutmSec = 0;
 static long gTimersListSize = EMPTY_LIST;
-static long gCurrentRunningTimerIdx = -1;
 static VTAL_tstrTimerInfo gTimersList[NUMBER_OF_TIMERS];
 /*!
  * To resolve the race condition between adding/removing timer functions
@@ -63,9 +63,18 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         return;
 
     VTAL_LOCK();
+    if(gTimersListSize == NUMBER_OF_TIMERS)
+    {
+        VTAL_UNLOCK();
+        return;
+    }
+    
     /* Search first if this Timer is already inserted.  */
     if(findTimer(VTAL_tpstrConfig->timerID) != NOT_FOUND)
+    {
+        VTAL_UNLOCK();
         return;
+    }
 
     if (gTimersListSize == EMPTY_LIST)
     {
@@ -78,7 +87,6 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         gTimersList[0].timerStatus  = ACTIVE;
         gAbsoulateTimeoutmSec = gTimersList[0].relativeTimeoutmSec;
         gTimersListSize = 1;
-        gCurrentRunningTimerIdx = 0;
         /*Assign Timerslist Update function */
         HTAL_updateVirtualTimersList(updateTimersList);
         /* start low level timer */
@@ -179,7 +187,10 @@ void VTAL_removeTimer(VTAL_tTimerId timerID)
     VTAL_LOCK();
     int timerIdx = findTimer(timerID);
     if (timerIdx == NOT_FOUND)
+    {
+        VTAL_UNLOCK();
         return;
+    }
     /*!
      * Add what will be removed to the next timer to maintain the same absolute
      * time and don't change other timers relative time. 
@@ -202,33 +213,37 @@ void VTAL_removeTimer(VTAL_tTimerId timerID)
 void updateTimersList(void)
 {
     VTAL_LOCK();
-    ++gCurrentRunningTimerIdx;
-    if (gCurrentRunningTimerIdx >= gTimersListSize)
+    gAbsoulateTimeoutmSec -= gTimersList[0].relativeTimeoutmSec;
+    shiftTimersListOneStepBackward(0);
+    --gTimersListSize;
+    if (gTimersListSize == 0)
     {
-        gCurrentRunningTimerIdx = -1;
-        gTimersListSize == EMPTY_LIST;
+        gTimersListSize = EMPTY_LIST;
     }
     else
     {
        /*!
         * When having multiple of Logical timers with the same timeout. By
         * design the next relative timeout will be zero, So we just execute 
-        * user callback immediatly.
+        * user callback immediately.
         */
-        if (gTimersList[gCurrentRunningTimerIdx].relativeTimeoutmSec == 0)
+        if (gTimersList[0].relativeTimeoutmSec == 0)
         {
-            gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent((void *)0);
+            gTimersList[0].expiredTimeEvent((void *)0);
             VTAL_UNLOCK();
             updateTimersList();
         }
         else
         {
             HTAL_startPhysicalTimer(
-                gTimersList[gCurrentRunningTimerIdx].relativeTimeoutmSec,
-                gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent);
+                gTimersList[0].relativeTimeoutmSec,
+                gTimersList[0].expiredTimeEvent);
         }
     }
     VTAL_UNLOCK();
+#ifdef __DEBUG__
+        VTAL_showTimerList();
+#endif
 }
 
 void shiftTimersListOneStepForward(int lastIdxToShift)

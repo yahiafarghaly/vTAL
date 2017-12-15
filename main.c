@@ -76,39 +76,15 @@ int main()
     printf("Hello vTAL\n");
 
     VTAL_addTimer(&t1);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t2);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t3);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t4);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t5);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t6);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t7);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
     VTAL_addTimer(&t8);
-/*#ifdef __DEBUG__
-        VTAL_showTimerList();
-#endif */
-
     VTAL_addTimer(&t9);
+
 #ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
@@ -126,8 +102,9 @@ int main()
         T_rel[8] = 700, ( id = 8 )
     */
     VTAL_removeTimer(t3.timerID);
+
 #ifdef __DEBUG__
-        VTAL_showTimerList();
+    VTAL_showTimerList();
 #endif
      /* final correct output after remove:
         T_abs = 1700
@@ -141,11 +118,22 @@ int main()
         T_rel[7] = 700, ( id = 8 )
     */
 #ifdef __DEBUG__
-        VTAL_showTimerList();
+    VTAL_showTimerList();
 #endif
+    
     while(testRes != 0x03F6);
-    printf("Done\n");
-        return 0;
+    printf("Test#1: Done\n");
+
+    testRes = 0;
+    VTAL_addTimer(&t1);
+    VTAL_addTimer(&t3);
+    VTAL_addTimer(&t4);
+    VTAL_addTimer(&t9);
+
+    while(testRes != 0x021A);
+    printf("Test#2: Done\n");
+    
+    return 0;
 }
 
 void t1Event(void *arg)
