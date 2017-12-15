@@ -7,8 +7,9 @@
 
 typedef enum
 {
-    NOT_ACTIVE = 0x0C0C,
-    ACTIVE = 0x00DB
+    NOT_AVAILABLE = 0x0C0C,
+    ACTIVE = 0x00DB,
+    READY = 0x0FCF
 }VTAL_tenuTimerStatus;
 
 typedef struct
@@ -24,14 +25,31 @@ static VTAL_tTimeMilliSec gAbsoulateTimeoutmSec = 0;
 static long gTimersListSize = EMPTY_LIST;
 static long gCurrentRunningTimerIdx = -1;
 static VTAL_tstrTimerInfo gTimersList[NUMBER_OF_TIMERS];
+/*!
+ * To resolve the race condition between adding/removing timer functions
+ * And the timer update list function. Remember: updateTimersList() is
+ * called Async from the physcial timer not in user space. so we should take
+ * care since gTimersList[] is changing among these functions.  */ 
+static unsigned long gMutexVariable = 1;
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define VTAL_LOCK()                 \
+    do                              \
+    {                               \
+        while (gMutexVariable == 0) \
+            ;                       \
+        gMutexVariable = 0;         \
+    } while (0);
+
+#define VTAL_UNLOCK() gMutexVariable = 1;
+
 static void updateTimersList(void);
 static void shiftTimersListOneStepForward(int lastIdxToShift);
+static void shiftTimersListOneStepBackward(int toIdx);
 static int findTimer(VTAL_tTimerId timerID);
 
 #ifdef __cplusplus
@@ -44,6 +62,7 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
     if (VTAL_tpstrConfig == EMPTY_CONFIG)
         return;
 
+    VTAL_LOCK();
     /* Search first if this Timer is already inserted.  */
     if(findTimer(VTAL_tpstrConfig->timerID) != NOT_FOUND)
         return;
@@ -65,6 +84,7 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         /* start low level timer */
         HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
                                 gTimersList[0].expiredTimeEvent);
+        VTAL_UNLOCK();
     }
     else
     {
@@ -95,9 +115,10 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
             gTimersList[gTimersListSize].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
             gTimersList[gTimersListSize].timerMode = VTAL_tpstrConfig->timerMode;
             gTimersList[gTimersListSize].relativeTimeoutmSec = newTimerRelativeTimeout;
-            gTimersList[gTimersListSize].timerStatus = ACTIVE;
+            gTimersList[gTimersListSize].timerStatus = READY;
             ++gTimersListSize;
             gAbsoulateTimeoutmSec = newTimerAbsTimeout;
+            VTAL_UNLOCK();
             return;
         }
 
@@ -139,12 +160,13 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
                 gTimersList[Idx].timerID = VTAL_tpstrConfig->timerID;
                 gTimersList[Idx].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
                 gTimersList[Idx].timerMode = VTAL_tpstrConfig->timerMode;
-                gTimersList[Idx].timerStatus = ACTIVE;
+                gTimersList[Idx].timerStatus = ((Idx == 0) ? ACTIVE : READY);
 
                 gTimersList[Idx].relativeTimeoutmSec = newTimerAbsTimeout - accumlatedRelativeTimes;
                 gTimersList[Idx + 1].relativeTimeoutmSec =
                     gTimersList[Idx + 1].relativeTimeoutmSec - gTimersList[Idx].relativeTimeoutmSec;
                 ++gTimersListSize;
+                VTAL_UNLOCK();
                 return;
             }
             accumlatedRelativeTimes += gTimersList[Idx].relativeTimeoutmSec;
@@ -154,17 +176,32 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
 
 void VTAL_removeTimer(VTAL_tTimerId timerID)
 {
+    VTAL_LOCK();
     int timerIdx = findTimer(timerID);
     if (timerIdx == NOT_FOUND)
         return;
-    gTimersList[timerIdx].timerStatus = NOT_ACTIVE;
-    gTimersList[timerIdx].expiredTimeEvent = ((void*)0);
-    /*  Not completed yet   */
-    /*gTimersList[timerIdx].*/
+    /*!
+     * Add what will be removed to the next timer to maintain the same absolute
+     * time and don't change other timers relative time. 
+     * Change only the abs time in the case that this timerID 
+     * is the last timer in the list.
+     *  */
+    if((timerIdx + 1) == gTimersListSize)
+    {
+        gAbsoulateTimeoutmSec -= gTimersList[timerIdx].relativeTimeoutmSec;
+    }
+    else
+    {
+        gTimersList[timerIdx + 1].relativeTimeoutmSec += gTimersList[timerIdx].relativeTimeoutmSec;
+        shiftTimersListOneStepBackward(timerIdx);
+    }  
+    --gTimersListSize;
+    VTAL_UNLOCK();
 }
 
 void updateTimersList(void)
 {
+    VTAL_LOCK();
     ++gCurrentRunningTimerIdx;
     if (gCurrentRunningTimerIdx >= gTimersListSize)
     {
@@ -173,14 +210,15 @@ void updateTimersList(void)
     }
     else
     {
-        /*!
-         * When having multiple of Logical timers with the same timeout. By
-         * design the next relative timeout will be zero, So we just execute 
-         * user callback immediatly.
+       /*!
+        * When having multiple of Logical timers with the same timeout. By
+        * design the next relative timeout will be zero, So we just execute 
+        * user callback immediatly.
         */
         if (gTimersList[gCurrentRunningTimerIdx].relativeTimeoutmSec == 0)
         {
-            gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent((void*)0);
+            gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent((void *)0);
+            VTAL_UNLOCK();
             updateTimersList();
         }
         else
@@ -190,6 +228,7 @@ void updateTimersList(void)
                 gTimersList[gCurrentRunningTimerIdx].expiredTimeEvent);
         }
     }
+    VTAL_UNLOCK();
 }
 
 void shiftTimersListOneStepForward(int lastIdxToShift)
@@ -199,6 +238,24 @@ void shiftTimersListOneStepForward(int lastIdxToShift)
         return;
     for (idx = gTimersListSize; idx >= lastIdxToShift; --idx)
         gTimersList[idx] = gTimersList[idx - 1];
+}
+
+void shiftTimersListOneStepBackward(int toIdx)
+{
+    int idx;
+    if (toIdx < 0)
+        return;
+    for(idx = toIdx; idx < (gTimersListSize - 1); idx++)
+        gTimersList[idx] = gTimersList[idx + 1];
+    /*!
+     * Note: The last element at [idx] position will
+     * be duplicated of what at position [idx - 1] since we loop
+     * until gTimerListSize - 1 to avoid transfer garbage/ or access
+     * an unauthorized memory place to position [idx].
+     * 
+     * Don't decrease the array size, let it for the developer when (outside)
+     * to decrease it.
+     */
 }
 
 static int findTimer(VTAL_tTimerId timerID)

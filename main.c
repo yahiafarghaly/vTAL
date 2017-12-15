@@ -112,8 +112,8 @@ int main()
 #ifdef __DEBUG__
         VTAL_showTimerList();
 #endif
-
-    /* final correct output:
+    
+    /* final correct output before remove:
         T_abs = 1700
         T_rel[0] = 100, ( id = 4 )
         T_rel[1] = 50, ( id = 5 )
@@ -125,7 +125,25 @@ int main()
         T_rel[7] = 0, ( id = 6 )
         T_rel[8] = 700, ( id = 8 )
     */
-    while(testRes != 0x03FE);
+    VTAL_removeTimer(t3.timerID);
+#ifdef __DEBUG__
+        VTAL_showTimerList();
+#endif
+     /* final correct output after remove:
+        T_abs = 1700
+        T_rel[0] = 100, ( id = 4 )
+        T_rel[1] = 50, ( id = 5 )
+        T_rel[2] = 150, ( id = 9 )
+        T_rel[3] = 100, ( id = 2 )
+        T_rel[4] = 0, ( id = 7 )
+        T_rel[5] = 100, ( id = 1 )
+        T_rel[6] = 500, ( id = 6 )
+        T_rel[7] = 700, ( id = 8 )
+    */
+#ifdef __DEBUG__
+        VTAL_showTimerList();
+#endif
+    while(testRes != 0x03F6);
     printf("Done\n");
         return 0;
 }
