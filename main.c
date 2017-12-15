@@ -2,7 +2,8 @@
 
 #include <vTAL.h>
 
-int testRes = 0x0;
+int testSingleShot = 0x0;
+int testPeriodicShot = 0x0;
 
 void t1Event(void* arg);
 void t2Event(void* arg);
@@ -121,71 +122,81 @@ int main()
     VTAL_showTimerList();
 #endif
     
-    while(testRes != 0x03F6);
+    while(testSingleShot != 0x03F6);
     printf("Test#1: Done\n");
 
-    testRes = 0;
+    testSingleShot = 0;
     VTAL_addTimer(&t1);
     VTAL_addTimer(&t3);
     VTAL_addTimer(&t4);
     VTAL_addTimer(&t9);
 
-    while(testRes != 0x021A);
+    while(testSingleShot != 0x021A);
     printf("Test#2: Done\n");
-    
+
+    testPeriodicShot = 0;
+    t6.timerMode = VTAL_PERIODIC_TIMER;
+    t1.timerMode = VTAL_PERIODIC_TIMER;
+    VTAL_addTimer(&t6);
+    VTAL_addTimer(&t1);
+    VTAL_addTimer(&t2);
+    while(testPeriodicShot != 5);
+    printf("Test#3: Done\n");
+
     return 0;
 }
 
 void t1Event(void *arg)
 {
-    testRes |= (1 << 1);
+    testSingleShot |= (1 << 1);
     printf("T1 event\n");
 }
 
 void t2Event(void *arg)
 {
-    testRes |= (1 << 2);
+    testSingleShot |= (1 << 2);
     printf("T2 event\n");
 }
 
 void t3Event(void *arg)
 {
-    testRes |= (1 << 3);
+    testSingleShot |= (1 << 3);
     printf("T3 event\n");
 }
 
 void t4Event(void *arg)
 {
-    testRes |= (1 << 4);
+    testSingleShot |= (1 << 4);
     printf("T4 event\n");
 }
 
 void t5Event(void *arg)
 {
-    testRes |= (1 << 5);
+    testSingleShot |= (1 << 5);
     printf("T5 event\n");
 }
 
 void t6Event(void *arg)
 {
-    testRes |= (1 << 6);
+    testSingleShot |= (1 << 6);
+    testPeriodicShot +=1;
     printf("T6 event\n");
 }
 
 void t7Event(void *arg)
 {
-    testRes |= (1 << 7);
+    testSingleShot |= (1 << 7);
     printf("T7 event\n");
 }
 
 void t8Event(void *arg)
 {
-    testRes |= (1 << 8);
+    testSingleShot |= (1 << 8);
     printf("T8 event\n");
 }
 
 void t9Event(void *arg)
 {
-    testRes |= (1 << 9);
+    testSingleShot |= (1 << 9);
     printf("T9 event\n");
 }
