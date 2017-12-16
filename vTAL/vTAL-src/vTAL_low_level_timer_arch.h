@@ -10,11 +10,13 @@ extern "C" {
 #endif
 
 
-void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
+void HTAL_startPhysicalTimer(long timePeriodMilliSec,
                              void (*userTimerCallBack)(void *),
                              void* userTimerCallbackArg);
 
 void HTAL_stopPhysicalTimer(void);
+
+long HTAL_remainingTime();
 
 void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *),
                                   void *userTimerCallbackArg);

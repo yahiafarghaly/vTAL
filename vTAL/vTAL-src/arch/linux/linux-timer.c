@@ -17,11 +17,21 @@ struct sigaction TimerSignalHandler, oldTimerSignalHandler;
 static void HTAL_linux_TimerHandler(int);
 
 
-void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
+void HTAL_startPhysicalTimer(long timePeriodMilliSec,
                              void (*userTimerCallBack)(void *),
                              void* userTimerCallbackArg)
 {
 
+    /*! 
+     * Should be handled at VTAL, so it doesn't pass a zero timeout.
+     */
+    if(timePeriodMilliSec <= 0)
+    {
+        gUserTimerCallBack = userTimerCallBack;
+        gUserTimerCallbackArg = userTimerCallbackArg;
+        HTAL_linux_TimerHandler(0);
+        return;
+    }
 
     timerVal.it_interval.tv_sec = 0;
     timerVal.it_interval.tv_usec = 0;
@@ -60,7 +70,12 @@ void HTAL_linux_TimerHandler(int signal_num)
 {
     if(gUserTimerCallBack != NULL)
         gUserTimerCallBack(gUserTimerCallbackArg);
-    gVTAL_updateCallBack();
+    /*!
+     * gVTAL_updateCallBack is always guarantee to be not NULL from VTAL
+     * The check here for the purpose of testing HTAL alone.
+     */
+    if(gVTAL_updateCallBack != NULL)
+        gVTAL_updateCallBack();
 }
 
 void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void))
@@ -73,6 +88,14 @@ void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *),
 {
     gUserTimerCallBack = userTimerCallBack;
     gUserTimerCallbackArg = userTimerCallbackArg;
+}
+
+long HTAL_remainingTime()
+{
+  struct itimerval currTimerVal;
+  getitimer(ITIMER_REAL, &currTimerVal);
+  
+  return  (currTimerVal.it_value.tv_sec*1000) + ((currTimerVal.it_value.tv_usec)/1000);
 }
 
 #endif  /*   __linux__   */

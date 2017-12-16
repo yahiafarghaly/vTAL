@@ -78,6 +78,10 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         gTimersList[0].absoluteTimeoutmSec =
             VTAL_tpstrConfig->expiredTime.milliseconds +
             (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
+        /*A temp silly solution for the drunk developers */
+        if (gTimersList[0].absoluteTimeoutmSec <= 0)
+            gTimersList[0].absoluteTimeoutmSec = 1;
+        
         gTimersList[0].relativeTimeoutmSec = gTimersList[0].absoluteTimeoutmSec;
         gAbsoulateTimeoutmSec = gTimersList[0].absoluteTimeoutmSec;
         gTimersListSize = 1;
@@ -92,8 +96,9 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
     else
     {
         VTAL_tTimeMilliSec newTimerRelativeTimeout;
-        unsigned long Idx;
         VTAL_tTimeMilliSec accumlatedRelativeTimes;
+        VTAL_tTimeMilliSec firstTimerElapsedTime;
+        unsigned long Idx;
 
         VTAL_tTimeMilliSec newTimerAbsTimeout =
             VTAL_tpstrConfig->expiredTime.milliseconds +
@@ -145,6 +150,7 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
          * finishes.
          *  */
         accumlatedRelativeTimes = 0;
+        firstTimerElapsedTime = 0;
         for (Idx = 0; Idx < gTimersListSize; ++Idx)
         {
             if ((newTimerAbsTimeout - accumlatedRelativeTimes) < gTimersList[Idx].relativeTimeoutmSec)
@@ -153,10 +159,7 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
                     user callback & timeout quickly @ lower level */
                 if(Idx == 0)
                 {
-                    HTAL_changeUserTimerCallBack(VTAL_tpstrConfig->expiredTimeEvent,
-                    VTAL_tpstrConfig->eventContextInfo);
-                    /* This is not correct by any means to stop the actual timing &
-                        should be placed with the correct behaviour/Interface.*/
+                    firstTimerElapsedTime = gTimersList[0].relativeTimeoutmSec - HTAL_remainingTime();
                     HTAL_stopPhysicalTimer();
                     HTAL_startPhysicalTimer(newTimerAbsTimeout,
                                             VTAL_tpstrConfig->expiredTimeEvent,
@@ -170,6 +173,19 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
                 gTimersList[Idx].absoluteTimeoutmSec = newTimerAbsTimeout;
                 gTimersList[Idx].relativeTimeoutmSec = newTimerAbsTimeout - accumlatedRelativeTimes;
                 gTimersList[Idx + 1].relativeTimeoutmSec -= gTimersList[Idx].relativeTimeoutmSec;
+                /*! 
+                 * In case Idx is equal to 0, firstTimerElapsedTime has a value
+                 * even zero (if time between two successive addTimer() call is
+                 * zero(i.e very unrealistic case) ). Any way, the moved timer
+                 * relative timeout @[1] must change since the physical timer 
+                 * was timing for it. So the elapsed time has been calculated
+                 * as above then we substracte this amount from @[1] timer and
+                 * update the gAbsoulateTimeoutmSec to maintain a precise timing
+                 * as possible. 
+                 * */
+                gTimersList[Idx + 1].relativeTimeoutmSec -= firstTimerElapsedTime;
+                gAbsoulateTimeoutmSec -= firstTimerElapsedTime;
+
                 ++gTimersListSize;
                 VTAL_UNLOCK();
                 return;
@@ -194,16 +210,38 @@ void VTAL_removeTimer(VTAL_tTimerId timerID)
      * Change only the abs time in the case that this timerID 
      * is the last timer in the list.
      *  */
-    if((timerIdx + 1) == gTimersListSize)
+    if ((timerIdx + 1) == gTimersListSize)
     {
         gAbsoulateTimeoutmSec -= gTimersList[timerIdx].relativeTimeoutmSec;
+        if (gTimersListSize == 1)
+            HTAL_stopPhysicalTimer();
     }
     else
     {
-        gTimersList[timerIdx + 1].relativeTimeoutmSec += gTimersList[timerIdx].relativeTimeoutmSec;
+
+        /* Change the timer callback before shifting when it is the first timer.*/
+        if (timerIdx == 0)
+        {
+            VTAL_tTimeMilliSec firstTimerElapsedTime;
+            firstTimerElapsedTime = gTimersList[0].relativeTimeoutmSec - HTAL_remainingTime();
+            HTAL_stopPhysicalTimer();
+            /*!
+             * Ironically, I have to reverse the previous opertion since i need
+             * ElapsedTime variable for decreasing the global absolute timeout. 
+             */
+            gTimersList[1].relativeTimeoutmSec += (gTimersList[0].relativeTimeoutmSec - firstTimerElapsedTime);
+            gAbsoulateTimeoutmSec -= firstTimerElapsedTime;
+            HTAL_startPhysicalTimer(gTimersList[1].relativeTimeoutmSec,
+                                    gTimersList[1].expiredTimeEvent, gTimersList[1].eventContextInfo);
+        }
+        else
+            gTimersList[timerIdx + 1].relativeTimeoutmSec += gTimersList[timerIdx].relativeTimeoutmSec;
+
         shiftTimersListOneStepBackward(timerIdx);
-    }  
+    }
     --gTimersListSize;
+    if (gTimersListSize == 0)
+        gTimersListSize = EMPTY_LIST;
     VTAL_UNLOCK();
 }
 

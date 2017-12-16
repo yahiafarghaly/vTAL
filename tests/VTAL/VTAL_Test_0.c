@@ -144,6 +144,8 @@ int main()
     VTAL_addTimer(&t1);
     VTAL_addTimer(&t2);
     while(testPeriodicShot != 5);
+    VTAL_removeTimer(t6.timerID);
+    VTAL_removeTimer(t1.timerID);
     printf("Test#3: Done\n");
 
     return 0;
