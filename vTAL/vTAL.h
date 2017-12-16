@@ -24,6 +24,7 @@ typedef struct
     VTAL_tstrTimeSettings   expiredTime;
     VTAL_tenuTimerMode      timerMode;
     VTAL_tCALLBACK          expiredTimeEvent;
+    VTAL_tCallBackArg       eventContextInfo;
 }VTAL_tstrConfig;
 
 #ifdef __cplusplus

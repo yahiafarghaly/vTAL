@@ -22,18 +22,21 @@ int main()
 
     t1.timerID = TIMER_ID_1;
     t1.expiredTimeEvent = t1Event;
+    t1.eventContextInfo = (VTAL_tCallBackArg)11;
     t1.timerMode = VTAL_ONE_SHOT_TIMER;
     t1.expiredTime.seconds = 0;
     t1.expiredTime.milliseconds = 500;
 
     t2.timerID = TIMER_ID_2;
     t2.expiredTimeEvent = t2Event;
+    t2.eventContextInfo = (VTAL_tCallBackArg)22;
     t2.timerMode = VTAL_ONE_SHOT_TIMER;
     t2.expiredTime.seconds = 0;
     t2.expiredTime.milliseconds = 400;
 
     t3.timerID = TIMER_ID_3;
     t3.expiredTimeEvent = t3Event;
+    t3.eventContextInfo = (VTAL_tCallBackArg)33;
     t3.timerMode = VTAL_ONE_SHOT_TIMER;
     t3.expiredTime.seconds = 0;
     t3.expiredTime.milliseconds = 1000;
@@ -149,19 +152,19 @@ int main()
 void t1Event(void *arg)
 {
     testSingleShot |= (1 << 1);
-    printf("T1 event\n");
+    printf("T1 event with arg: %d\n",(long)arg);
 }
 
 void t2Event(void *arg)
 {
     testSingleShot |= (1 << 2);
-    printf("T2 event\n");
+    printf("T2 event with arg: %d\n",(long)arg);
 }
 
 void t3Event(void *arg)
 {
     testSingleShot |= (1 << 3);
-    printf("T3 event\n");
+    printf("T2 event with arg: %d\n",(long)arg);
 }
 
 void t4Event(void *arg)

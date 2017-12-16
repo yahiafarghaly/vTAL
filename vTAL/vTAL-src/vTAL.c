@@ -5,22 +5,14 @@
 #define EMPTY_CONFIG    ((void*)0)
 #define NOT_FOUND       (-1)
 
-typedef enum
-{
-    /*  Not Used Yet */
-    NOT_AVAILABLE = 0x0C0C,
-    ACTIVE = 0x00DB,
-    READY = 0x0FCF
-}VTAL_tenuTimerStatus;
-
 typedef struct
 {
     VTAL_tTimerId           timerID;
     VTAL_tenuTimerMode      timerMode;
     VTAL_tCALLBACK          expiredTimeEvent;
+    VTAL_tCallBackArg       eventContextInfo;
     VTAL_tTimeMilliSec      relativeTimeoutmSec;
     VTAL_tTimeMilliSec      absoluteTimeoutmSec;
-    VTAL_tenuTimerStatus    timerStatus;
 }VTAL_tstrTimerInfo;
 
 static VTAL_tTimeMilliSec gAbsoulateTimeoutmSec = 0;
@@ -81,19 +73,20 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
     {
         gTimersList[0].timerID = VTAL_tpstrConfig->timerID;
         gTimersList[0].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
+        gTimersList[0].eventContextInfo = VTAL_tpstrConfig->eventContextInfo;
         gTimersList[0].timerMode = VTAL_tpstrConfig->timerMode;
         gTimersList[0].absoluteTimeoutmSec =
             VTAL_tpstrConfig->expiredTime.milliseconds +
             (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
         gTimersList[0].relativeTimeoutmSec = gTimersList[0].absoluteTimeoutmSec;
-        gTimersList[0].timerStatus  = ACTIVE;
         gAbsoulateTimeoutmSec = gTimersList[0].absoluteTimeoutmSec;
         gTimersListSize = 1;
         /*Assign Timerslist Update function */
         HTAL_updateVirtualTimersList(updateTimersList);
         /* start low level timer */
         HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
-                                gTimersList[0].expiredTimeEvent);
+                                gTimersList[0].expiredTimeEvent,
+                                gTimersList[0].eventContextInfo);
         VTAL_UNLOCK();
     }
     else
@@ -123,10 +116,10 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         {
             gTimersList[gTimersListSize].timerID = VTAL_tpstrConfig->timerID;
             gTimersList[gTimersListSize].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
+            gTimersList[gTimersListSize].eventContextInfo = VTAL_tpstrConfig->eventContextInfo;
             gTimersList[gTimersListSize].timerMode = VTAL_tpstrConfig->timerMode;
             gTimersList[gTimersListSize].relativeTimeoutmSec = newTimerRelativeTimeout;
             gTimersList[gTimersListSize].absoluteTimeoutmSec = newTimerAbsTimeout;
-            gTimersList[gTimersListSize].timerStatus = READY;
             ++gTimersListSize;
             gAbsoulateTimeoutmSec = newTimerAbsTimeout;
             VTAL_UNLOCK();
@@ -160,18 +153,20 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
                     user callback & timeout quickly @ lower level */
                 if(Idx == 0)
                 {
-                    HTAL_changeUserTimerCallBack(VTAL_tpstrConfig->expiredTimeEvent);
+                    HTAL_changeUserTimerCallBack(VTAL_tpstrConfig->expiredTimeEvent,
+                    VTAL_tpstrConfig->eventContextInfo);
                     /* This is not correct by any means to stop the actual timing &
                         should be placed with the correct behaviour/Interface.*/
                     HTAL_stopPhysicalTimer();
                     HTAL_startPhysicalTimer(newTimerAbsTimeout,
-                                            VTAL_tpstrConfig->expiredTimeEvent);
+                                            VTAL_tpstrConfig->expiredTimeEvent,
+                                            VTAL_tpstrConfig->eventContextInfo);
                 }
                 shiftTimersListOneStepForward(Idx + 1);
                 gTimersList[Idx].timerID = VTAL_tpstrConfig->timerID;
                 gTimersList[Idx].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
+                gTimersList[Idx].eventContextInfo = VTAL_tpstrConfig->eventContextInfo;
                 gTimersList[Idx].timerMode = VTAL_tpstrConfig->timerMode;
-                gTimersList[Idx].timerStatus = ((Idx == 0) ? ACTIVE : READY);
                 gTimersList[Idx].absoluteTimeoutmSec = newTimerAbsTimeout;
                 gTimersList[Idx].relativeTimeoutmSec = newTimerAbsTimeout - accumlatedRelativeTimes;
                 gTimersList[Idx + 1].relativeTimeoutmSec -= gTimersList[Idx].relativeTimeoutmSec;
@@ -235,7 +230,7 @@ void updateTimersList(void)
         */
         if (gTimersList[0].relativeTimeoutmSec == 0)
         {
-            gTimersList[0].expiredTimeEvent((void *)0);
+            gTimersList[0].expiredTimeEvent(gTimersList[0].eventContextInfo);
             VTAL_UNLOCK();
             updateTimersList();
         }
@@ -243,7 +238,8 @@ void updateTimersList(void)
         {
             HTAL_startPhysicalTimer(
                 gTimersList[0].relativeTimeoutmSec,
-                gTimersList[0].expiredTimeEvent);
+                gTimersList[0].expiredTimeEvent,
+                gTimersList[0].eventContextInfo);
         }
     }
     VTAL_UNLOCK();
@@ -253,6 +249,7 @@ void updateTimersList(void)
         VTAL_tstrConfig tmp;
         tmp.timerID = firstTimer.timerID;
         tmp.expiredTimeEvent = firstTimer.expiredTimeEvent;
+        tmp.eventContextInfo = firstTimer.eventContextInfo;
         tmp.timerMode = firstTimer.timerMode;
         tmp.expiredTime.milliseconds = firstTimer.absoluteTimeoutmSec;
         tmp.expiredTime.seconds = 0;

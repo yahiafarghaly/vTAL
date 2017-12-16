@@ -8,6 +8,7 @@
 #include <signal.h>
 
 void (*gUserTimerCallBack)(void *);
+void* gUserTimerCallbackArg;
 void(*gVTAL_updateCallBack)(void);
 
 struct itimerval timerVal;
@@ -17,7 +18,8 @@ static void HTAL_linux_TimerHandler(int);
 
 
 void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
-                             void (*userTimerCallBack)(void *))
+                             void (*userTimerCallBack)(void *),
+                             void* userTimerCallbackArg)
 {
 
 
@@ -29,6 +31,7 @@ void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
     TimerSignalHandler.sa_handler = &HTAL_linux_TimerHandler;
     TimerSignalHandler.sa_flags = SA_NOMASK;
     gUserTimerCallBack = userTimerCallBack;
+    gUserTimerCallbackArg = userTimerCallbackArg;
 
     if (setitimer(ITIMER_REAL, &timerVal, NULL) != 0)
     {
@@ -56,7 +59,7 @@ void HTAL_stopPhysicalTimer(void)
 void HTAL_linux_TimerHandler(int signal_num)
 {
     if(gUserTimerCallBack != NULL)
-        gUserTimerCallBack(NULL);
+        gUserTimerCallBack(gUserTimerCallbackArg);
     gVTAL_updateCallBack();
 }
 
@@ -65,9 +68,11 @@ void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void))
     gVTAL_updateCallBack = VTAL_updateCallBack;
 }
 
-void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *))
+void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *),
+                                  void *userTimerCallbackArg)
 {
     gUserTimerCallBack = userTimerCallBack;
+    gUserTimerCallbackArg = userTimerCallbackArg;
 }
 
 #endif  /*   __linux__   */

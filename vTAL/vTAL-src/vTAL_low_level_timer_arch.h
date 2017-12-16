@@ -11,12 +11,13 @@ extern "C" {
 
 
 void HTAL_startPhysicalTimer(unsigned long timePeriodMilliSec,
-                             void (*userTimerCallBack)(void *));
+                             void (*userTimerCallBack)(void *),
+                             void* userTimerCallbackArg);
 
 void HTAL_stopPhysicalTimer(void);
 
-
-void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *));
+void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *),
+                                  void *userTimerCallbackArg);
 
 void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void));
 
