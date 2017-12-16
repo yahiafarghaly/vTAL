@@ -23,7 +23,10 @@ void HTAL_startPhysicalTimer(long timePeriodMilliSec,
 {
 
     /*! 
-     * Should be handled at VTAL, so it doesn't pass a zero timeout.
+     * The user should not supply a zero timeout and it doesn't make sense 
+     * to handle it. But, a simple handling will not harm beside this is
+     * optional implementation choice since zero timeout is handled from
+     * VTAL anyway.
      */
     if(timePeriodMilliSec <= 0)
     {

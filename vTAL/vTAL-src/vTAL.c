@@ -71,22 +71,34 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
 
     if (gTimersListSize == EMPTY_LIST)
     {
+        /*Assign Timerslist Update function */
+        HTAL_updateVirtualTimersList(updateTimersList);
+        gTimersList[0].absoluteTimeoutmSec =
+            VTAL_tpstrConfig->expiredTime.milliseconds +
+            (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
+        /* May be a use case leads to a timeout equals zero */
+        if (gTimersList[0].absoluteTimeoutmSec <= 0)
+        {
+            if (VTAL_tpstrConfig->timerMode == VTAL_PERIODIC_TIMER)
+            /*! Smallest time (1 ms) so, we don't get stuck of calling this
+             * timer handler only ! and leave the others with no chance. */
+                gTimersList[0].absoluteTimeoutmSec = 1;
+            else
+            {
+                if(VTAL_tpstrConfig->expiredTimeEvent != (void*)0)
+                    VTAL_tpstrConfig->expiredTimeEvent(VTAL_tpstrConfig->eventContextInfo);
+                VTAL_UNLOCK();
+                return;
+            }
+        }
         gTimersList[0].timerID = VTAL_tpstrConfig->timerID;
         gTimersList[0].expiredTimeEvent = VTAL_tpstrConfig->expiredTimeEvent;
         gTimersList[0].eventContextInfo = VTAL_tpstrConfig->eventContextInfo;
         gTimersList[0].timerMode = VTAL_tpstrConfig->timerMode;
-        gTimersList[0].absoluteTimeoutmSec =
-            VTAL_tpstrConfig->expiredTime.milliseconds +
-            (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
-        /*A temp silly solution for the drunk developers */
-        if (gTimersList[0].absoluteTimeoutmSec <= 0)
-            gTimersList[0].absoluteTimeoutmSec = 1;
-        
         gTimersList[0].relativeTimeoutmSec = gTimersList[0].absoluteTimeoutmSec;
+
         gAbsoulateTimeoutmSec = gTimersList[0].absoluteTimeoutmSec;
         gTimersListSize = 1;
-        /*Assign Timerslist Update function */
-        HTAL_updateVirtualTimersList(updateTimersList);
         /* start low level timer */
         HTAL_startPhysicalTimer(gAbsoulateTimeoutmSec,
                                 gTimersList[0].expiredTimeEvent,
@@ -103,7 +115,20 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
         VTAL_tTimeMilliSec newTimerAbsTimeout =
             VTAL_tpstrConfig->expiredTime.milliseconds +
             (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
-        
+        /*Don't rely that HTAL_startPhysicalTimer() handles the zero case*/
+        if (newTimerAbsTimeout <= 0)
+        {
+            if (VTAL_tpstrConfig->timerMode == VTAL_PERIODIC_TIMER)
+                newTimerAbsTimeout = 1;
+            else
+            {
+                if(VTAL_tpstrConfig->expiredTimeEvent != (void*)0)
+                    VTAL_tpstrConfig->expiredTimeEvent(VTAL_tpstrConfig->eventContextInfo);
+                VTAL_UNLOCK();
+                return;               
+            }
+        }
+
         /*! 
          * When NewTimerAbsTimeout is >= gAbsoulateTimeout, 
          * 1- We put this newTimer at the end of the list.

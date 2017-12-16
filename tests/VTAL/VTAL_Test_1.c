@@ -22,7 +22,7 @@ int main()
     t8.expiredTimeEvent = t8Event;
     t8.timerMode = VTAL_ONE_SHOT_TIMER;
     t8.expiredTime.seconds = 0;
-    t8.expiredTime.milliseconds = 1700;
+    t8.expiredTime.milliseconds = 0;
 
     t9.timerID = TIMER_ID_9;
     t9.expiredTimeEvent = t9Event;
