@@ -1,5 +1,5 @@
 #include <vTAL.h>
-#include "vTAL_low_level_timer_arch.h"
+#include "HTAL.h"
 
 #define EMPTY_LIST      (-1)
 #define EMPTY_CONFIG    ((void*)0)
@@ -41,8 +41,8 @@ extern "C" {
 #define VTAL_UNLOCK() gMutexVariable = 1;
 
 static void updateTimersList(void);
-static void shiftTimersListOneStepForward(int lastIdxToShift);
-static void shiftTimersListOneStepBackward(int toIdx);
+static void shiftTimersListOneStepForward(const int lastIdxToShift);
+static void shiftTimersListOneStepBackward(const int toIdx);
 static int findTimer(VTAL_tTimerId timerID);
 
 #ifdef __cplusplus
@@ -71,8 +71,6 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
 
     if (gTimersListSize == EMPTY_LIST)
     {
-        /*Assign Timerslist Update function */
-        HTAL_updateVirtualTimersList(updateTimersList);
         gTimersList[0].absoluteTimeoutmSec =
             VTAL_tpstrConfig->expiredTime.milliseconds +
             (VTAL_tpstrConfig->expiredTime.seconds) * 1000;
@@ -222,8 +220,9 @@ void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
 
 void VTAL_removeTimer(VTAL_tTimerId timerID)
 {
+    int timerIdx;
     VTAL_LOCK();
-    int timerIdx = findTimer(timerID);
+    timerIdx = findTimer(timerID);
     if (timerIdx == NOT_FOUND)
     {
         VTAL_UNLOCK();
@@ -272,9 +271,11 @@ void VTAL_removeTimer(VTAL_tTimerId timerID)
 
 void updateTimersList(void)
 {
+    /* ISO C90 forbids mixed declarations and code */ 
+    VTAL_tstrTimerInfo firstTimer;
+
     VTAL_LOCK();
-    
-    VTAL_tstrTimerInfo firstTimer = gTimersList[0];
+    firstTimer = gTimersList[0];
     
     gAbsoulateTimeoutmSec -= gTimersList[0].relativeTimeoutmSec;
     shiftTimersListOneStepBackward(0);
@@ -293,7 +294,8 @@ void updateTimersList(void)
         */
         if (gTimersList[0].relativeTimeoutmSec == 0)
         {
-            gTimersList[0].expiredTimeEvent(gTimersList[0].eventContextInfo);
+            if(gTimersList[0].expiredTimeEvent != (void*)0)
+                gTimersList[0].expiredTimeEvent(gTimersList[0].eventContextInfo);
             VTAL_UNLOCK();
             updateTimersList();
         }
@@ -324,7 +326,12 @@ void updateTimersList(void)
 #endif
 }
 
-void shiftTimersListOneStepForward(int lastIdxToShift)
+void HTAL_notifyTimeoutToVTAL()
+{
+    updateTimersList();
+}
+
+void shiftTimersListOneStepForward(const int lastIdxToShift)
 {
     int idx;
     if (lastIdxToShift <= 0)
@@ -333,7 +340,7 @@ void shiftTimersListOneStepForward(int lastIdxToShift)
         gTimersList[idx] = gTimersList[idx - 1];
 }
 
-void shiftTimersListOneStepBackward(int toIdx)
+void shiftTimersListOneStepBackward(const int toIdx)
 {
     int idx;
     if (toIdx < 0)

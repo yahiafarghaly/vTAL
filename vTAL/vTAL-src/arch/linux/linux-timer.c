@@ -1,15 +1,15 @@
-#include "../../vTAL_low_level_timer_arch.h"
+#include "../../HTAL.h"
 
 #ifdef __linux__    /* To Prevent Compiling it if in another arch   */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <signal.h>
 
 void (*gUserTimerCallBack)(void *);
 void* gUserTimerCallbackArg;
-void(*gVTAL_updateCallBack)(void);
 
 struct itimerval timerVal;
 struct sigaction TimerSignalHandler, oldTimerSignalHandler;
@@ -73,17 +73,8 @@ void HTAL_linux_TimerHandler(int signal_num)
 {
     if(gUserTimerCallBack != NULL)
         gUserTimerCallBack(gUserTimerCallbackArg);
-    /*!
-     * gVTAL_updateCallBack is always guarantee to be not NULL from VTAL
-     * The check here for the purpose of testing HTAL alone.
-     */
-    if(gVTAL_updateCallBack != NULL)
-        gVTAL_updateCallBack();
-}
 
-void HTAL_updateVirtualTimersList(void(*VTAL_updateCallBack)(void))
-{
-    gVTAL_updateCallBack = VTAL_updateCallBack;
+    HTAL_notifyTimeoutToVTAL();
 }
 
 void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *),
@@ -93,7 +84,7 @@ void HTAL_changeUserTimerCallBack(void (*userTimerCallBack)(void *),
     gUserTimerCallbackArg = userTimerCallbackArg;
 }
 
-long HTAL_remainingTime()
+long HTAL_remainingTime(void)
 {
   struct itimerval currTimerVal;
   getitimer(ITIMER_REAL, &currTimerVal);

@@ -154,19 +154,19 @@ int main()
 void t1Event(void *arg)
 {
     testSingleShot |= (1 << 1);
-    printf("T1 event with arg: %d\n",(long)arg);
+    printf("T1 event with arg: %li\n",(long)arg);
 }
 
 void t2Event(void *arg)
 {
     testSingleShot |= (1 << 2);
-    printf("T2 event with arg: %d\n",(long)arg);
+    printf("T2 event with arg: %li\n",(long)arg);
 }
 
 void t3Event(void *arg)
 {
     testSingleShot |= (1 << 3);
-    printf("T2 event with arg: %d\n",(long)arg);
+    printf("T2 event with arg: %li\n",(long)arg);
 }
 
 void t4Event(void *arg)
