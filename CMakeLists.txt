@@ -8,6 +8,6 @@ add_definitions(-g -D__DEBUG__) # For debugging.
 
 include_directories(./vTAL)
 
-add_subdirectory(tests/HTAL)
-add_subdirectory(tests/VTAL)
+add_subdirectory(tests/windows-linux/HTAL)
+add_subdirectory(tests/windows-linux/VTAL)
 

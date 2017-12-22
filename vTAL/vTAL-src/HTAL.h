@@ -17,6 +17,19 @@ extern "C" {
 #endif
 
 /*
+ * Function: HTAL_PhysicalTimerInit
+ * ----------------------------
+ *   The first function to be called in this module before any other API.
+ * 
+ *   Do what is neccessary to configure and prepare the timer
+ *   for action.
+ * 
+ *   returns: void
+ *   Implementation: Required as described.
+ */
+void HTAL_PhysicalTimerInit(void);
+
+/*
  * Function: HTAL_startPhysicalTimer
  * ----------------------------
  *   Start the operation of the hardware timer for a single shot type
@@ -51,7 +64,7 @@ void HTAL_stopPhysicalTimer(void);
  *   returns: remaining time in milliseconds.
  *   Implementation: Required as described. 
  *                   In case of in capability, just (return 0) but you will
- *                   lose percise timing from VTAL operations.
+ *                   lose the percise timing from VTAL operations.
  */
 long HTAL_remainingTime(void);
 

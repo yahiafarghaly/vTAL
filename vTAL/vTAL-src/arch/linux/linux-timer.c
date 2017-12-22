@@ -16,6 +16,10 @@ struct sigaction TimerSignalHandler, oldTimerSignalHandler;
 
 static void HTAL_linux_TimerHandler(int);
 
+void HTAL_PhysicalTimerInit(void)
+{
+    return;
+}
 
 void HTAL_startPhysicalTimer(long timePeriodMilliSec,
                              void (*userTimerCallBack)(void *),

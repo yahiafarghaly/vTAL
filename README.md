@@ -31,8 +31,11 @@ This layer contains standard APIs which expected to do a certain functionlity so
 - [vTAL Interfaces](Docs/vTAL.md)
 - [HTAL Interfaces](Docs/HTAL.md)
 
+## It is ported to
+- Any OS based on Linux Kernel(> v2.6)
+- Stellaris LM4F120XL (ARM based) using one physical 32-bit timer. (WTIMER0A)
+
 ## ToDo
 
-- [ ] Port & Test it on ARM microcontroller.
-- [ ] Port & Test it on AVR microcontroller.
+- [ ] Port & Test it on AVR microcontroller with 8-bit timer.
 - [ ] Port & Test it on Windows.

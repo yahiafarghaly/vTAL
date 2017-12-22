@@ -49,6 +49,10 @@ static int findTimer(VTAL_tTimerId timerID);
 } /* extern "C" */
 #endif
 
+void VTAL_init(void)
+{
+    HTAL_PhysicalTimerInit();
+}
 
 void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig)
 {

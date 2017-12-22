@@ -31,6 +31,7 @@ typedef struct
 extern "C" {
 #endif
 
+void VTAL_init(void);
 /*  Once it is added, it starts*/
 void VTAL_addTimer(VTAL_tstrConfig* VTAL_tpstrConfig);
 
