@@ -17,3 +17,6 @@ build/*
 *.bak
 *.uvgui.*
 *.uvopt
+tests/avr/atmega16-MCU/vTAL-atmelStudio/vTAL-atmelStudio/Release/*
+*.atsuo
+tests/avr/atmega16-MCU/vTAL-atmelStudio/vTAL-atmelStudio/Debug/*

@@ -34,8 +34,8 @@ This layer contains standard APIs which expected to do a certain functionlity so
 ## It is ported to
 - Any OS based on Linux Kernel(> v2.6)
 - Stellaris LM4F120XL (ARM based) using one physical 32-bit timer. (WTIMER0A)
+- AVR Atmega16/32 using 8-bit timer.(Timer0) 
 
 ## ToDo
 
-- [ ] Port & Test it on AVR microcontroller with 8-bit timer.
 - [ ] Port & Test it on Windows.
