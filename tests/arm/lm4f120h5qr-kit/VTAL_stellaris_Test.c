@@ -63,8 +63,16 @@ int main()
 {
 
     VTAL_tstrConfig t1,t2,t3;
-		
-	LEDsInit();
+	/*!
+     *  First thing to do is setting the clock source of system. 
+     *  The Precision internal oscillator (aka PIOSC) is chosen for simplicity.
+     *  And it is operating at 16 MHz. 
+     * */
+    SYSCTL_RCC_R |= (SYSCTL_RCC_BYPASS | SYSCTL_RCC_OSCSRC_INT);
+    /*Waste some system clocks till it stabilizes*/
+    delay();
+	
+    LEDsInit();
     VTAL_init();
 	
     t1.timerID = TIMER_ID_1;

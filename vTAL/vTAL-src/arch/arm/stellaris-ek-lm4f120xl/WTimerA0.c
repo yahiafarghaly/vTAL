@@ -4,6 +4,7 @@
 /*    This file is the implementation of the one of the hardware timers in  */
 /*    Stellaris LM4F120XL board.                                            */
 /*    This timer is the wide timer 0 (32-bit), subtimer A.                  */
+/*    The frequency of this timer is 16 MHz with no pre-scalar value        */
 /*                                                                          */
 /*    To use this driver, you need to export the following interrupt        */
 /*    handlers in the compiler startup code:                                */
@@ -16,6 +17,9 @@
 /****************************************************************************/
 
 #include "../../../HTAL.h"
+
+#ifdef __arm__
+
 #include "lm4f120h5qr.h"
 
 /*!
@@ -51,14 +55,6 @@ void* gUserTimerCallbackArg;
 void HTAL_PhysicalTimerInit(void)
 {
     long tmp;
-    /*!
-     *  First thing to do is setting the clock source of your timer, since 
-     *  it depends on the system clock, the Precision internal oscillator (aka PIOSC)
-     *  which normally it is operating at 16 MHz is chosen for simplicity. 
-     * */
-    SYSCTL_RCC_R |= (SYSCTL_RCC_BYPASS | SYSCTL_RCC_OSCSRC_INT);
-    /*Waste some system clocks till it stabilizes*/
-    tmp = SYSCTL_RCC_R;
 
     /* Enable the 32/64-Bit Wide General-Purpose Timer 0 Run Mode.  */
     SYSCTL_RCGCWTIMER_R |= SYSCTL_RCGCWTIMER_R0;
@@ -92,9 +88,6 @@ void HTAL_PhysicalTimerInit(void)
      * */
     NVIC_PRI23_R &= ~( (1<<23) | (1<<22) | (1<<21) );
     NVIC_EN2_R |= (1<<30);
-
-    /*Enable the global interrupt for the ARM processor if it is not enabled. */
-    EnableInterrupts();
 }
 
 void HTAL_startPhysicalTimer(long timePeriodMilliSec,
@@ -121,6 +114,8 @@ void HTAL_startPhysicalTimer(long timePeriodMilliSec,
     gUserTimerCallBack = userTimerCallBack;
     gUserTimerCallbackArg = userTimerCallbackArg;
     
+    /*Enable the global interrupt for the ARM processor if it is not enabled. */
+    EnableInterrupts();
     /*Finally, We start timer by enable its flag. (Timer A)*/
     WTIMER0_CTL_R |= TIMER_CTL_TAEN;
 }
@@ -187,3 +182,5 @@ void WideTimer0A_Handler(void)
     /*Notify VTAL that timer is timedout*/
     HTAL_notifyTimeoutToVTAL();
 }
+
+#endif /*	__arm__	*/
