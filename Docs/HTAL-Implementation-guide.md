@@ -37,35 +37,52 @@ The following is a pseudo code for implementing each HTAL APIs correctly for an 
 **Remember**: Set the clock source of the system to the desired need.
 
 #### HTAL_PhysicalTimerInit()
+
 1 - Enable the timer mode, disable any other modes.
+
 2 - Enable one shot mode timer feature. (this may be seen as compare mode in some timers).
+
 3 - Enable the timer interrupt in the interrupt vector table if neccessary.
+
 4 - Set the inital value for the timer register counter.
+
 5 - A prescalar value to the timer frequency if necessary.
 
 #### HTAL_startPhysicalTimer()
+
 1 -  You set the initial and final values for the timer. you also will convert the user time in millisecond to a tick count value in one of the timer registers.
+
 2 - You save the user callback and callback arguments to a later call in the timer handler.
+
 3 - You active the global interrupt of the system and the enable bit of the timer if exist.
+
 4 - At that time the timer shall start counting whether up or down according to your design decision. Also be aware to **not disable** the global interrupt of the system till the user's timer callback is called.
 
 #### HTAL_stopPhysicalTimer()
+
 1 - You shall stop the timer counting by disabling its enable bit or timer interrupt enable mask bit.
+
 2 - You **should not** disable gobal interrupt at this call. if you want, it is preferred to do it outside .
 
 #### HTAL_remainingTime()
+
 1 - You should retain the remaining time of an active timer in milliseconds before the timer time out. You may have to convert the remaining ticks into a remaining timeout.
 
 #### HTAL_changeUserTimerCallBack()
+
 1 - Just change the user's timer callback and its argument whether the timer is active, timeouted or dis-active.
 
 #### HTAL_notifyTimeoutToVTAL()
+
 You don't need to implement it, just call this method at the end of the timer handler(aka ISR).
 
 ### Interrupt Service Routine of the timer.
 This ISR should be called automatically by processor the interrupt event is triggered. Whether this timer trigger is caused due to timer compare event or timer timeout event.
+
 1 - Clear the timer flag to ackwnoledge that the timer event is reconginzed.
+
 2 - Call the user's timer callback with user argument.
+
 3 - Finally, don't forget to call ***HTAL_notifyTimeoutToVTAL()*** so VTAL can start the timer for the second timer in the timer list.
 
 That's all.
