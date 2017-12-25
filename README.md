@@ -1,15 +1,19 @@
-# vTAL
+# vTAL - Virtual Timer Abstraction Layer
 
-vTAL (Virtual Timer Abstraction Layer) aims to provide a standard interface for using multiple of logic timers simultaneously while a one physical timer is presented on the target system.
+vTAL with small *v* aims to provide a standard interface for using multiple of virtual timers simultaneously while a one physical timer is presented on the target system.
 
-vTAL presents standard APIs call for application layer developing and low level calls of the physical timer so it can be ported on any system and get the benefit of using so many virtual timers as you want while the system has only one physical hardware timer.
+vTAL represents standard APIs call for the application layer of a certain software while underneath providing low level APIs calls of the physical timer so it can be ported on any system and get the benefit of using so many virtual timers as you want while the system has only one hardware timer.
 
-The project is mainly aimed to be used in **an embedded software environment** but also, it can be used with Linux/Windows applications.
+The project is mainly aimed to be used in **an embedded software environment** but also, it can be used with Linux/Windows OS environment.
 
-The project consists of two main parts which are standarized:
+The project consists of two main parts which are standarized as shown in the following figure:
 
 - vTAL (Virtual Timer Abstraction Layer).
 - HTAL (Hardware Timer Abstraction Layer).
+
+<p align="center"> 
+<img src="https://drive.google.com/uc?id=147ynTZiYu6MaEh02fdWINNKXSKhIeasU">
+</p>
 
 ## vTAL description
 
@@ -17,7 +21,7 @@ This is the part which involves with the application developing. It is very abst
 
 ## HTAL description
 
-This layer contains standard APIs which expected to do a certain functionlity so vTAL algorithm for handling too many virtual timers can work properly. And it implies the implementation of the hardware timer.
+This layer contains standard APIs which each one expected to do a certain functionlity such that vTAL algorithm for handling too many virtual timers can work properly. It implies the details implementation of the working with the hardware timer.
 
 ## What makes it special
 
