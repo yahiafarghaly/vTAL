@@ -22,7 +22,9 @@ extern "C" {
  *   The first function to be called in this module before any other API.
  * 
  *   Do what is neccessary to configure and prepare the timer
- *   for action.
+ *   for action. Also these configurations should not be affected by
+ *   HTAL_startPhysicalTimer() and HTAL_stopPhysicalTimer(). Since TimerInit()
+ *   is called only once by VTAL.
  * 
  *   returns: void
  *   Implementation: Required as described.
@@ -32,9 +34,12 @@ void HTAL_PhysicalTimerInit(void);
 /*
  * Function: HTAL_startPhysicalTimer
  * ----------------------------
- *   Start the operation of the hardware timer for a single shot type
+ *   Start the operation of the hardware timer for a single shot mode
  *   and a timeout equals to timePeriodMilliSec in milliseconds.
- *
+ * 
+ *   Note: This function should enable the global timer interrupt for
+ *      system if necessary.
+ * 
  *   timePeriodMilliSec  : timeout of the timer in milliseconds. 
  *   userTimerCallBack   : user timer callback when timeout is reached.
  *   userTimerCallbackArg: user timer callback arguments casted to void*

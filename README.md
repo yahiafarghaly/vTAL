@@ -4,7 +4,7 @@ vTAL (Virtual Timer Abstraction Layer) aims to provide a standard interface for 
 
 vTAL presents standard APIs call for application layer developing and low level calls of the physical timer so it can be ported on any system and get the benefit of using so many virtual timers as you want while the system has only one physical hardware timer.
 
-The project is mainly aimed to be used in an embedded software environment but also, it can be used with Linux/Windows applications.
+The project is mainly aimed to be used in **an embedded software environment** but also, it can be used with Linux/Windows applications.
 
 The project consists of two main parts which are standarized:
 
@@ -17,7 +17,7 @@ This is the part which involves with the application developing. It is very abst
 
 ## HTAL description
 
-This layer contains standard APIs which expected to do a certain functionlity so vTAL algorithm for handling too many virtual timers can work properly.
+This layer contains standard APIs which expected to do a certain functionlity so vTAL algorithm for handling too many virtual timers can work properly. And it implies the implementation of the hardware timer.
 
 ## What makes it special
 
@@ -28,8 +28,8 @@ This layer contains standard APIs which expected to do a certain functionlity so
 
 ## Documentations
 
-- [vTAL Interfaces](Docs/vTAL.md)
-- [HTAL Interfaces](Docs/HTAL.md)
+- [vTAL Interfaces and the idea behind it](Docs/vTAL.md)
+- [HTAL Implementation guidelines](Docs/HTAL-Implementation-guide.md)
 
 ## It is ported to
 - Any OS based on Linux Kernel(> v2.6)
